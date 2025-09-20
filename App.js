@@ -1,10 +1,9 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+// App.js
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 
-// Import the screens
 import EventsScreen from './screens/EventsScreen';
 import SubscriptionsScreen from './screens/SubscriptionsScreen';
 import MapScreen from './screens/MapScreen';
@@ -16,25 +15,34 @@ export default function App() {
   return (
     <NavigationContainer>
       <Tab.Navigator
-        initialRouteName="Events"
-        screenOptions={{
-          headerShown: false, // optional: hides the top header
-        }}
+        screenOptions={({ route }) => ({
+          tabBarStyle: {
+            backgroundColor: '#121212',
+            borderTopColor: '#333',
+          },
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName;
+            if (route.name === 'Events') {
+              iconName = focused ? 'calendar' : 'calendar-outline';
+            } else if (route.name === 'Subs') {
+              iconName = focused ? 'star' : 'star-outline';
+            } else if (route.name === 'Map') {
+              iconName = focused ? 'map' : 'map-outline';
+            } else if (route.name === 'Profile') {
+              iconName = focused ? 'person' : 'person-outline';
+            }
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: '#BB86FC', // A light purple for the active tab
+          tabBarInactiveTintColor: '#888',
+          headerShown: false,
+        })}
       >
         <Tab.Screen name="Events" component={EventsScreen} />
-        <Tab.Screen name="Subscriptions" component={SubscriptionsScreen} />
+        <Tab.Screen name="Subs" component={SubscriptionsScreen} />
         <Tab.Screen name="Map" component={MapScreen} />
         <Tab.Screen name="Profile" component={ProfileScreen} />
       </Tab.Navigator>
     </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
