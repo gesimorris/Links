@@ -1,6 +1,6 @@
-// screens/EventsScreen.js
+// screens/EventsScreen.js (Promoter View)
 import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, Image, FlatList, Dimensions, Platform, Modal, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Image, FlatList, Dimensions, Platform, Modal, StyleSheet, TextInput, Switch, Linking, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +16,7 @@ const COLORS = {
   text:      '#e5e7eb',
   subtext:   '#9ca3af',
   icon:      '#f9fafb',
+  accent:    '#BB86FC',
 };
 
 // Map ids -> images (require must be static in RN)
@@ -28,13 +29,20 @@ const CARD_IMAGES = {
   '6': require('../assets/images/6.png'),
 };
 
+// Reverted to original events, with new promoter data added
 const items = [
-  { id: '1', place: 'Thursday Cycling Club', country: 'Aberdeen',   category: 'Sports',   date: 'Oct 3, 6 PM' },
-  { id: '2', place: 'Poker Night',            country: 'Sahali',     category: 'Games',    date: 'Oct 5, 8 PM' },
-  { id: '3', place: 'CS25 Study Group',       country: 'TRU Campus', category: 'Study',    date: 'Oct 4, 6 PM' },
-  { id: '4', place: 'Nightshift on 5th',      country: 'Downtown',   category: 'Nightlife',date: 'Oct 7, 10 PM' },
-  { id: '5', place: 'Trivia Tuesday',         country: 'Valleyview', category: 'Trivia',   date: 'Oct 8, 7 PM' },
-  { id: '6', place: 'Open Mic Night',         country: 'North Shore',category: 'Music',    date: 'Oct 12, 7 PM' },
+  { id: '1', place: 'Thursday Cycling Club', country: 'Aberdeen', category: 'Sports', date: 'Oct 3, 6 PM', attendees: 25, revenue: 0, isPrivate: false },
+  { id: '2', place: 'Poker Night', country: 'Sahali', category: 'Games', date: 'Oct 4, 8 PM', attendees: 12, revenue: 100, isPrivate: true },
+  { id: '3', place: 'CS25 Study Group', country: 'TRU Campus', category: 'Study', date: 'Oct 5, 6 PM', attendees: 8, revenue: 0, isPrivate: false },
+  { id: '4', place: 'Nightshift on 5th', country: 'Downtown', category: 'Nightlife', date: 'Oct 7, 10 PM', attendees: 120, revenue: 650, isPrivate: false },
+  { id: '5', place: 'Trivia Tuesday', country: 'Valleyview', category: 'Trivia', date: 'Oct 8, 7 PM', attendees: 30, revenue: 50, isPrivate: false },
+  { id: '6', place: 'Open Mic Night', country: 'North Shore', category: 'Music', date: 'Oct 12, 7 PM', attendees: 45, revenue: 0, isPrivate: false },
+];
+
+const DUMMY_COMMENTS = [
+  { id: 'c1', user: 'JaneD', text: 'Great crowd! Music was awesome.' },
+  { id: 'c2', user: 'CoolGuy', text: 'Had a fantastic time, will be back for sure.' },
+  { id: 'c3', user: 'Partygoer', text: 'Venue was a bit crowded, but loved the vibe!' },
 ];
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -57,43 +65,49 @@ const shadow = Platform.select({
 
 export default function EventsScreen() {
   const navigation = useNavigation();
+  
+  // --- Add Event state ---
+  const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  const [newEvent, setNewEvent] = useState({
+    name: '',
+    location: '',
+    description: '',
+    isPrivate: false,
+  });
 
-  // --- Filter state ---
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [activeFilterType, setActiveFilterType] = useState('category'); // 'category' | 'date'
-  const [filters, setFilters] = useState({ category: null, date: null });
-  const [tempSel, setTempSel] = useState({ category: null, date: null });
+  // --- New state for event details modal ---
+  const [isEventDetailsOpen, setIsEventDetailsOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
-  const categories = useMemo(
-    () => Array.from(new Set(items.map(i => i.category))),
-    []
-  );
-  const dates = useMemo(
-    () => Array.from(new Set(items.map(i => i.date))),
-    []
-  );
-
-  const filteredItems = useMemo(() => {
-    const { category, date } = filters;
-    return items.filter(it =>
-      (category ? it.category === category : true) &&
-      (date ? it.date === date : true)
-    );
-  }, [filters]);
-
-  const openFilter = () => {
-    setTempSel(filters);
-    setActiveFilterType(filters.category ? 'category' : (filters.date ? 'date' : 'category'));
-    setIsFilterOpen(true);
+  const openAddEvent = () => setIsAddEventOpen(true);
+  const closeAddEvent = () => {
+    setIsAddEventOpen(false);
+    // Reset the form
+    setNewEvent({
+      name: '',
+      location: '',
+      description: '',
+      isPrivate: false,
+    });
   };
-  const applyFilter = () => {
-    setFilters(tempSel);
-    setIsFilterOpen(false);
+  const handleAddEvent = () => {
+    // This is where you'd send the data to your backend
+    console.log("Adding event:", newEvent);
+    closeAddEvent();
   };
-  const clearFilter = () => {
-    setTempSel({ category: null, date: null });
-    setFilters({ category: null, date: null });
-    setIsFilterOpen(false);
+  const handleUploadAgreement = () => {
+    // Logic to open a file picker and upload a document
+    console.log("Uploading customer agreement form...");
+  };
+
+  // --- New handler to open the event details modal ---
+  const handleOpenEventDetails = (event) => {
+    setSelectedEvent(event);
+    setIsEventDetailsOpen(true);
+  };
+  const handleCloseEventDetails = () => {
+    setIsEventDetailsOpen(false);
+    setSelectedEvent(null);
   };
 
   return (
@@ -103,78 +117,13 @@ export default function EventsScreen() {
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 }}>
         <Text style={{ fontSize: 22, fontWeight: '600', color: COLORS.text }}>
-          Explore
+          Promoter Dashboard
         </Text>
         <TouchableOpacity
+          onPress={openAddEvent}
           style={[
             {
               marginLeft: 'auto',
-              backgroundColor: COLORS.button,
-              width: 36, height: 36, borderRadius: 18,
-              alignItems: 'center', justifyContent: 'center',
-            },
-            shadow,
-          ]}
-          accessibilityLabel="Search"
-        >
-          <Ionicons name="search" size={20} color={COLORS.icon} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Banner */}
-      <View style={[{ marginHorizontal: 16, marginBottom: 12, borderRadius: 24 }, shadow]}>
-        <View style={{ backgroundColor: COLORS.banner, height: 190, borderRadius: 24, overflow: 'hidden' }}>
-          <Image
-            source={require('../assets/images/banner2.png')}
-            resizeMode="cover"
-            style={{ width: '100%', height: '100%' }}
-          />
-        </View>
-      </View>
-
-      {/* Section Title + Actions */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginBottom: 8 }}>
-        <Text style={{ fontSize: 16, fontWeight: '500', color: COLORS.subtext }}>
-          Find Clubs & Events
-        </Text>
-
-        {/* Right-side actions */}
-        <TouchableOpacity
-          onPress={() => navigation.navigate('MyEvents')}
-          style={[
-            {
-              marginLeft: 'auto',
-              backgroundColor: COLORS.button,
-              paddingVertical: 8, paddingHorizontal: 16,
-              borderRadius: 9999,
-              marginRight: 8,
-            },
-            shadow,
-          ]}
-        >
-          <Text style={{ color: COLORS.text, fontSize: 14, fontWeight: '500' }}>My Events</Text>
-        </TouchableOpacity>
-
-        {/* NEW: Filter button (left of Add) */}
-        <TouchableOpacity
-          onPress={openFilter}
-          style={[
-            {
-              backgroundColor: COLORS.button,
-              width: 36, height: 36, borderRadius: 18,
-              alignItems: 'center', justifyContent: 'center',
-              marginRight: 8,
-            },
-            shadow,
-          ]}
-          accessibilityLabel="Filter Events"
-        >
-          <Ionicons name="options-outline" size={20} color={COLORS.icon} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            {
               backgroundColor: COLORS.button,
               width: 36, height: 36, borderRadius: 18,
               alignItems: 'center', justifyContent: 'center',
@@ -187,33 +136,16 @@ export default function EventsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Active filter chip (optional visual) */}
-      {(filters.category || filters.date) ? (
-        <View style={{ paddingHorizontal: 16, marginBottom: 6 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            {filters.category ? (
-              <View style={styles.chip}>
-                <Ionicons name="pricetag-outline" size={14} color={COLORS.text} />
-                <Text style={styles.chipText}>{filters.category}</Text>
-              </View>
-            ) : null}
-            {filters.date ? (
-              <View style={styles.chip}>
-                <Ionicons name="time-outline" size={14} color={COLORS.text} />
-                <Text style={styles.chipText}>{filters.date}</Text>
-              </View>
-            ) : null}
-            <TouchableOpacity onPress={clearFilter} style={[styles.clearChip, shadow]}>
-              <Ionicons name="close" size={14} color={COLORS.text} />
-              <Text style={styles.chipText}>Clear</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      ) : null}
+      {/* Section Title */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginBottom: 8 }}>
+        <Text style={{ fontSize: 16, fontWeight: '500', color: COLORS.subtext }}>
+          Your Events
+        </Text>
+      </View>
 
-      {/* Events Grid */}
+      {/* Promoter's Events Grid */}
       <FlatList
-        data={filteredItems}
+        data={items}
         keyExtractor={(item) => item.id}
         numColumns={2}
         showsVerticalScrollIndicator={false}
@@ -232,6 +164,7 @@ export default function EventsScreen() {
               },
               shadow,
             ]}
+            onPress={() => handleOpenEventDetails(item)}
           >
             <View
               style={{
@@ -252,136 +185,350 @@ export default function EventsScreen() {
             <Text style={{ fontWeight: '600', fontSize: 16, color: COLORS.text }} numberOfLines={1}>
               {item.place}
             </Text>
-            <Text style={{ color: COLORS.subtext, fontSize: 12 }} numberOfLines={1}>
-              {item.country}
-            </Text>
-            <Text style={{ color: COLORS.subtext, fontSize: 12, marginTop: 2 }} numberOfLines={1}>
-              {item.category}
-            </Text>
-            <Text style={{ color: COLORS.subtext, fontSize: 12 }} numberOfLines={1}>
-              {item.date}
-            </Text>
+            <View style={{ marginTop: 4 }}>
+                <Text style={{ color: COLORS.subtext, fontSize: 12 }}>
+                    <Ionicons name="people" size={12} color={COLORS.subtext} /> {item.attendees} Attending
+                </Text>
+                <Text style={{ color: COLORS.subtext, fontSize: 12 }}>
+                    <Ionicons name="cash" size={12} color={COLORS.subtext} /> ${item.revenue} Revenue
+                </Text>
+            </View>
+            <TouchableOpacity 
+                style={styles.scanQrButton}
+            >
+                <Ionicons name="qr-code-outline" size={16} color={COLORS.text} />
+                <Text style={styles.scanQrText}>Scan QR</Text>
+            </TouchableOpacity>
           </TouchableOpacity>
         )}
-        ListFooterComponent={<View style={{ height: 12 }} />}
       />
 
-      {/* Filter Modal */}
-      <Modal transparent visible={isFilterOpen} animationType="fade" onRequestClose={() => setIsFilterOpen(false)}>
+      {/* Add Event Modal */}
+      <Modal transparent visible={isAddEventOpen} animationType="fade" onRequestClose={closeAddEvent}>
         <View style={styles.overlay}>
-          <View style={[styles.modalCard, shadow]}>
+          <ScrollView style={[styles.modalCard, shadow]}>
             <View style={styles.modalHeader}>
-              <Text style={{ color: COLORS.text, fontSize: 18, fontWeight: '600' }}>Filter Events</Text>
-              <TouchableOpacity onPress={() => setIsFilterOpen(false)} style={styles.iconBtn}>
+              <Text style={{ color: COLORS.text, fontSize: 18, fontWeight: '600' }}>Add a New Event</Text>
+              <TouchableOpacity onPress={closeAddEvent} style={styles.iconBtn}>
                 <Ionicons name="close" size={18} color={COLORS.text} />
               </TouchableOpacity>
             </View>
 
-            {/* Toggle between Category / Date */}
-            <View style={styles.segment}>
-              <TouchableOpacity
-                onPress={() => setActiveFilterType('category')}
-                style={[styles.segmentBtn, activeFilterType === 'category' && styles.segmentBtnActive]}
-              >
-                <Text style={[styles.segmentText, activeFilterType === 'category' && styles.segmentTextActive]}>Category</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setActiveFilterType('date')}
-                style={[styles.segmentBtn, activeFilterType === 'date' && styles.segmentBtnActive]}
-              >
-                <Text style={[styles.segmentText, activeFilterType === 'date' && styles.segmentTextActive]}>Date</Text>
-              </TouchableOpacity>
+            {/* Image Placeholder */}
+            <TouchableOpacity style={styles.imagePlaceholder}>
+              <Ionicons name="camera-outline" size={40} color={COLORS.subtext} />
+              <Text style={styles.imagePlaceholderText}>Add Event Image</Text>
+            </TouchableOpacity>
+            
+            {/* NEW: Customer Agreement Form Upload */}
+            <TouchableOpacity style={styles.uploadButton} onPress={handleUploadAgreement}>
+                <Ionicons name="document-text-outline" size={20} color={COLORS.text} />
+                <Text style={styles.uploadButtonText}>Upload Customer Agreement Form</Text>
+            </TouchableOpacity>
+
+            {/* Form Inputs */}
+            <TextInput
+              style={styles.input}
+              placeholder="Event Name"
+              placeholderTextColor={COLORS.subtext}
+              value={newEvent.name}
+              onChangeText={(text) => setNewEvent({ ...newEvent, name: text })}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Location"
+              placeholderTextColor={COLORS.subtext}
+              value={newEvent.location}
+              onChangeText={(text) => setNewEvent({ ...newEvent, location: text })}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Brief Description of Activity"
+              placeholderTextColor={COLORS.subtext}
+              value={newEvent.description}
+              onChangeText={(text) => setNewEvent({ ...newEvent, description: text })}
+              multiline
+              numberOfLines={4}
+            />
+
+            {/* Other Important Info */}
+            <TextInput
+              style={styles.input}
+              placeholder="Date (e.g., Oct 25, 2025)"
+              placeholderTextColor={COLORS.subtext}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Time (e.g., 7 PM - 9 PM)"
+              placeholderTextColor={COLORS.subtext}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Category (e.g., Sports, Music, Study)"
+              placeholderTextColor={COLORS.subtext}
+            />
+
+            {/* Public/Private Toggle */}
+            <View style={styles.toggleRow}>
+              <Text style={styles.toggleText}>Private Event?</Text>
+              <Switch
+                trackColor={{ false: '#767577', true: COLORS.accent }}
+                thumbColor={newEvent.isPrivate ? COLORS.text : '#f4f3f4'}
+                ios_backgroundColor="#3e3e3e"
+                onValueChange={() => setNewEvent({ ...newEvent, isPrivate: !newEvent.isPrivate })}
+                value={newEvent.isPrivate}
+              />
             </View>
 
-            {/* Options */}
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {(activeFilterType === 'category' ? categories : dates).map(opt => {
-                const selected = activeFilterType === 'category'
-                  ? tempSel.category === opt
-                  : tempSel.date === opt;
-                return (
-                  <TouchableOpacity
-                    key={opt}
-                    onPress={() => {
-                      if (activeFilterType === 'category') {
-                        setTempSel({ category: opt, date: null }); // mutually exclusive
-                      } else {
-                        setTempSel({ category: null, date: opt });
-                      }
-                    }}
-                    style={[styles.optionChip, selected && styles.optionChipActive]}
-                  >
-                    <Text style={[styles.optionText, selected && styles.optionTextActive]}>{opt}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* Actions */}
+            {/* Action Buttons */}
             <View style={styles.modalActions}>
-              <TouchableOpacity onPress={clearFilter} style={[styles.actionBtn, { backgroundColor: '#394357' }]}>
-                <Text style={styles.actionText}>Clear</Text>
+              <TouchableOpacity onPress={closeAddEvent} style={[styles.actionBtn, { backgroundColor: '#394357' }]}>
+                <Text style={styles.actionText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={applyFilter} style={[styles.actionBtn, { backgroundColor: COLORS.button }]}>
-                <Text style={styles.actionText}>Apply</Text>
+              <TouchableOpacity
+                onPress={handleAddEvent}
+                style={[styles.actionBtn, { backgroundColor: COLORS.accent }]}
+              >
+                <Text style={styles.actionText}>Add Event</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
+
+      {/* NEW: Event Details Modal */}
+      <Modal transparent visible={isEventDetailsOpen} animationType="fade" onRequestClose={handleCloseEventDetails}>
+        <View style={styles.overlay}>
+          <ScrollView style={[styles.modalCard, shadow]}>
+            {selectedEvent && (
+              <>
+                <View style={styles.modalHeader}>
+                  <Text style={{ color: COLORS.text, fontSize: 18, fontWeight: '600' }}>Event Details</Text>
+                  <TouchableOpacity onPress={handleCloseEventDetails} style={styles.iconBtn}>
+                    <Ionicons name="close" size={18} color={COLORS.text} />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.detailsContainer}>
+                  <Image
+                    source={CARD_IMAGES[selectedEvent.id]}
+                    resizeMode="cover"
+                    style={styles.detailsImage}
+                  />
+                  <Text style={styles.detailsTitle}>{selectedEvent.place}</Text>
+                  <Text style={styles.detailsSubtitle}>{selectedEvent.date} • {selectedEvent.country}</Text>
+
+                  <View style={styles.statsRow}>
+                      <View style={styles.statBox}>
+                        <Ionicons name="people" size={24} color={COLORS.accent} />
+                        <Text style={styles.statText}>{selectedEvent.attendees}</Text>
+                        <Text style={styles.statLabel}>Attendees</Text>
+                      </View>
+                      <View style={styles.statBox}>
+                        <Ionicons name="cash" size={24} color={COLORS.accent} />
+                        <Text style={styles.statText}>${selectedEvent.revenue}</Text>
+                        <Text style={styles.statLabel}>Revenue</Text>
+                      </View>
+                  </View>
+
+                  <TouchableOpacity style={styles.scanQrButtonLarge}>
+                    <Ionicons name="qr-code-outline" size={20} color={COLORS.card} />
+                    <Text style={styles.scanQrTextLarge}>Scan QR Code</Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.commentSection}>
+                    <Text style={styles.commentTitle}>Community Feedback</Text>
+                    {DUMMY_COMMENTS.map(comment => (
+                      <View key={comment.id} style={styles.commentItem}>
+                        <Text style={styles.commentUser}>{comment.user}</Text>
+                        <Text style={styles.commentText}>{comment.text}</Text>
+                      </View>
+                    ))}
+                    {DUMMY_COMMENTS.length === 0 && (
+                      <Text style={styles.noCommentsText}>No comments yet.</Text>
+                    )}
+                  </View>
+                </View>
+              </>
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.55)',
-    justifyContent: 'center', alignItems: 'center', padding: 20,
-  },
-  modalCard: {
-    width: '100%', backgroundColor: COLORS.card, borderRadius: 16,
-    padding: 16,
-  },
-  modalHeader: {
-    flexDirection: 'row', alignItems: 'center', marginBottom: 12,
-  },
-  iconBtn: {
-    marginLeft: 'auto',
-    width: 32, height: 32, borderRadius: 16,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: COLORS.button,
-  },
-  segment: {
-    flexDirection: 'row', backgroundColor: '#20293a',
-    borderRadius: 9999, padding: 4, marginBottom: 12,
-  },
-  segmentBtn: { flex: 1, paddingVertical: 8, borderRadius: 9999, alignItems: 'center' },
-  segmentBtnActive: { backgroundColor: COLORS.button },
-  segmentText: { color: COLORS.subtext, fontWeight: '600' },
-  segmentTextActive: { color: COLORS.text },
-  optionChip: {
-    paddingVertical: 8, paddingHorizontal: 12,
-    backgroundColor: '#20293a', borderRadius: 9999,
-  },
-  optionChipActive: { backgroundColor: '#3a4661' },
-  optionText: { color: COLORS.subtext, fontSize: 13, fontWeight: '600' },
-  optionTextActive: { color: COLORS.text },
-  modalActions: {
-    flexDirection: 'row', gap: 10, marginTop: 16, justifyContent: 'flex-end',
-  },
-  actionBtn: {
-    paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10,
-  },
-  actionText: { color: COLORS.text, fontWeight: '600' },
-  chip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#20293a', paddingVertical: 6, paddingHorizontal: 10,
-    borderRadius: 9999,
-  },
-  chipText: { color: COLORS.text, fontSize: 12, fontWeight: '600' },
-  clearChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#553a3a', paddingVertical: 6, paddingHorizontal: 10,
-    borderRadius: 9999, marginLeft: 6,
-  },
+    overlay: {
+      flex: 1, backgroundColor: 'rgba(0,0,0,0.55)',
+      justifyContent: 'center', alignItems: 'center', padding: 20,
+    },
+    modalCard: {
+      width: '100%', maxHeight: '90%', backgroundColor: COLORS.card, borderRadius: 16,
+      padding: 16,
+    },
+    modalHeader: {
+      flexDirection: 'row', alignItems: 'center', marginBottom: 12,
+    },
+    iconBtn: {
+      marginLeft: 'auto',
+      width: 32, height: 32, borderRadius: 16,
+      alignItems: 'center', justifyContent: 'center',
+      backgroundColor: COLORS.button,
+    },
+    input: {
+      backgroundColor: COLORS.button,
+      color: COLORS.text,
+      padding: 12,
+      borderRadius: 8,
+      marginBottom: 12,
+    },
+    imagePlaceholder: {
+      height: 150,
+      backgroundColor: COLORS.button,
+      borderRadius: 8,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 12,
+      borderWidth: 1,
+      borderStyle: 'dashed',
+      borderColor: COLORS.subtext,
+    },
+    imagePlaceholderText: {
+      color: COLORS.subtext,
+      marginTop: 8,
+    },
+    uploadButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: COLORS.button,
+      padding: 12,
+      borderRadius: 8,
+      marginBottom: 12,
+    },
+    uploadButtonText: {
+      color: COLORS.text,
+      marginLeft: 10,
+      fontWeight: '600',
+    },
+    toggleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+    },
+    toggleText: {
+      color: COLORS.text,
+      fontSize: 16,
+    },
+    modalActions: {
+      flexDirection: 'row', gap: 10, marginTop: 16, justifyContent: 'flex-end',
+    },
+    actionBtn: {
+      paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10,
+    },
+    actionText: { color: COLORS.text, fontWeight: '600' },
+    scanQrButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: COLORS.accent,
+        padding: 8,
+        borderRadius: 8,
+        marginTop: 8,
+    },
+    scanQrText: {
+        color: COLORS.card,
+        fontWeight: 'bold',
+        marginLeft: 6,
+    },
+    detailsContainer: {
+        alignItems: 'center',
+        marginTop: 10,
+        paddingBottom: 20,
+    },
+    detailsImage: {
+        width: '100%',
+        height: 180,
+        borderRadius: 10,
+        marginBottom: 15,
+    },
+    detailsTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: COLORS.text,
+        textAlign: 'center',
+    },
+    detailsSubtitle: {
+        fontSize: 14,
+        color: COLORS.subtext,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    statsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        width: '100%',
+        marginBottom: 20,
+    },
+    statBox: {
+        alignItems: 'center',
+    },
+    statText: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: COLORS.accent,
+        marginTop: 5,
+    },
+    statLabel: {
+        fontSize: 12,
+        color: COLORS.subtext,
+        marginTop: 2,
+    },
+    scanQrButtonLarge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: COLORS.accent,
+        paddingVertical: 12,
+        borderRadius: 10,
+        width: '100%',
+        marginBottom: 20,
+    },
+    scanQrTextLarge: {
+        color: COLORS.card,
+        fontWeight: 'bold',
+        fontSize: 16,
+        marginLeft: 10,
+    },
+    commentSection: {
+        width: '100%',
+    },
+    commentTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS.text,
+        marginBottom: 10,
+    },
+    commentItem: {
+        backgroundColor: COLORS.button,
+        padding: 10,
+        borderRadius: 8,
+        marginBottom: 8,
+    },
+    commentUser: {
+        fontWeight: 'bold',
+        color: COLORS.accent,
+        marginBottom: 2,
+    },
+    commentText: {
+        color: COLORS.subtext,
+    },
+    noCommentsText: {
+        color: COLORS.subtext,
+        textAlign: 'center',
+        fontStyle: 'italic',
+    },
 });
