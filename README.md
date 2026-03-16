@@ -1,0 +1,3 @@
+# Links – Event & Activity Discovery App (Prototype)
+
+This project is a prototype for an application I am currently developing that helps people discover activities and meet others with similar interests. The platform allows businesses and organizations to post upcoming events such as sports games, social gatherings, and community activities. Users can browse events, purchase tickets, and connect with other users who are also planning to attend. A core feature of the app is helping users find partners or groups for events, making it easier to participate in activities that are often more enjoyable when shared with others.
